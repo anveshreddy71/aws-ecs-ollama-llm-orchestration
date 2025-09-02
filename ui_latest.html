@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Management Console</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --dark-bg: #1f2937;
+            --light-bg: #f9fafb;
+            --card-bg: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .connection-panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .connection-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto auto;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .form-group input {
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: #fff;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-warning { background: var(--warning-color); color: white; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-info { background: var(--info-color); color: white; }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-disconnected {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .service-controls {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .service-status {
+            padding: 16px;
+            border-radius: 8px;
+            background: var(--light-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .model-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-item:last-child {
+            border-bottom: none;
+        }
+
+        .model-info {
+            flex: 1;
+        }
+
+        .model-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .model-size {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .chat-panel {
+            grid-column: span 2;
+            margin-top: 24px;
+        }
+
+        .chat-container {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .conversation-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: var(--light-bg);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background: var(--primary-color);
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.assistant {
+            background: white;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .model-selector {
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success { background: var(--success-color); }
+        .notification.error { background: var(--danger-color); }
+        .notification.info { background: var(--info-color); }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .conversation-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .conversation-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .conversation-item:hover {
+            background: var(--light-bg);
+        }
+
+        .conversation-item:last-child {
+            border-bottom: none;
+        }
+
+        .conversation-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .conversation-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .connection-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .chat-panel {
+                grid-column: span 1;
+            }
+        }
+
+        .advanced-controls {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--light-bg);
+            border-radius: 8px;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .pull-model-form {
+            display: flex;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .pull-model-form input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-robot"></i> LLM Management Console</h1>
+            <p>Production-grade interface for managing Large Language Models and ECS services</p>
+        </div>
+
+        <div class="connection-panel">
+            <div class="connection-form">
+                <div class="form-group">
+                    <label for="host">Host/IP Address</label>
+                    <input type="text" id="host" value="localhost" placeholder="Enter host or IP">
+                </div>
+                <div class="form-group">
+                    <label for="port">Port</label>
+                    <input type="number" id="port" value="8000" placeholder="Enter port">
+                </div>
+                <button class="btn btn-primary" onclick="testConnection()">
+                    <i class="fas fa-plug"></i> Test Connection
+                </button>
+                <div class="status-indicator status-disconnected" id="connectionStatus">
+                    <i class="fas fa-circle"></i> Disconnected
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- ECS Service Management -->
+            <div class="panel">
+                <h2><i class="fas fa-server"></i> ECS Service Control</h2>
+                <div class="service-controls">
+                    <div class="service-status" id="serviceStatus">
+                        <span>Service Status: <strong id="statusText">Unknown</strong></span>
+                        <button class="btn btn-info" onclick="checkServiceStatus()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="control-row">
+                        <button class="btn btn-success" onclick="startService()">
+                            <i class="fas fa-play"></i> Start Service
+                        </button>
+                        <button class="btn btn-danger" onclick="stopService()">
+                            <i class="fas fa-stop"></i> Stop Service
+                        </button>
+                        <button class="btn btn-info" onclick="checkHealth()">
+                            <i class="fas fa-heartbeat"></i> Health Check
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Model Management -->
+            <div class="panel">
+                <h2><i class="fas fa-brain"></i> Model Management</h2>
+                <div class="pull-model-form">
+                    <input type="text" id="modelName" placeholder="e.g., llama2, codellama:7b" />
+                    <button class="btn btn-primary" onclick="pullModel()">
+                        <i class="fas fa-download"></i> Pull Model
+                    </button>
+                </div>
+                <div class="advanced-controls">
+                    <button class="btn btn-info" onclick="refreshModels()">
+                        <i class="fas fa-list"></i> Refresh Models
+                    </button>
+                </div>
+                <div class="model-list" id="modelList">
+                    <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                        <i class="fas fa-spinner fa-spin"></i> Loading models...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
+        <div class="panel chat-panel">
+            <h2><i class="fas fa-comments"></i> Chat Interface</h2>
+            
+            <div class="conversation-controls">
+                <button class="btn btn-primary" onclick="startNewConversation()">
+                    <i class="fas fa-plus"></i> New Chat
+                </button>
+                <button class="btn btn-info" onclick="toggleConversationList()">
+                    <i class="fas fa-history"></i> Chat History
+                </button>
+                <button class="btn btn-warning" onclick="exportConversation()">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button class="btn btn-danger" onclick="clearAllConversations()">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+
+            <div class="conversation-list" id="conversationList"></div>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message assistant">
+                        Hello! I'm ready to help. Select a model and start chatting!
+                    </div>
+                </div>
+                <div class="chat-input-container">
+                    <select class="model-selector" id="selectedModel">
+                        <option value="">Select a model...</option>
+                    </select>
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Type your message..." onkeypress="handleChatKeyPress(event)">
+                    <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let baseUrl = 'http://localhost:8000';
+        let isConnected = false;
+        let statusCheckInterval = null;
+        let currentController = null;
+
+        // Conversation management
+        let currentConversation = {
+            id: generateId(),
+            messages: [],
+            model: null,
+            title: 'New Chat',
+            createdAt: new Date().toISOString()
+        };
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Update base URL when host/port changes
+        function updateBaseUrl() {
+            const host = document.getElementById('host').value;
+            const port = document.getElementById('port').value;
+            baseUrl = `http://${host}:${port}`;
+        }
+
+        // Test connection to the API
+        async function testConnection() {
+            updateBaseUrl();
+            try {
+                const response = await fetch(`${baseUrl}/healthz`);
+                if (response.ok) {
+                    showNotification('Connection successful!', 'success');
+                    updateConnectionStatus(true);
+                    checkServiceStatus();
+                    refreshModels();
+                } else {
+                    throw new Error('Connection failed');
+                }
+            } catch (error) {
+                showNotification('Connection failed: ' + error.message, 'error');
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const indicator = document.getElementById('connectionStatus');
+            
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+            }
+            
+            if (connected) {
+                indicator.className = 'status-indicator status-connected';
+                indicator.innerHTML = '<i class="fas fa-circle"></i> Connected';
+                
+                statusCheckInterval = setInterval(() => {
+                    checkServiceStatus();
+                }, 30000);
+            } else {
+                indicator.className = 'status-indicator status-disconnected';
+                indicator.innerHTML = '<i class="fas fa-circle"></i> Disconnected';
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 4000);
+        }
+
+        // ECS Service Management
+        async function startService() {
+            if (!isConnected) {
+                showNotification('Please test connection first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${baseUrl}/start_selfhost_llm`);
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showNotification('Service start initiated', 'success');
+                    setTimeout(checkServiceStatus, 2000);
+                }
+            } catch (error) {
+                showNotification('Failed to start service: ' + error.message, 'error');
+            }
+        }
+
+        async function stopService() {
+            if (!isConnected) {
+                showNotification('Please test connection first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${baseUrl}/shutdown_selfhost_llm`);
+                const data = await response.json();
+                if (data.status === 'success') {
+                    showNotification('Service shutdown initiated', 'success');
+                    setTimeout(checkServiceStatus, 2000);
+                }
+            } catch (error) {
+                showNotification('Failed to stop service: ' + error.message, 'error');
+            }
+        }
+
+        async function checkServiceStatus() {
+            if (!isConnected) return;
+            
+            try {
+                const response = await fetch(`${baseUrl}/selfhost_status`);
+                const data = await response.json();
+                const statusText = document.getElementById('statusText');
+                statusText.textContent = `${data.status} (Ready: ${data.ready})`;
+                
+                if (data.ready) {
+                    statusText.style.color = 'var(--success-color)';
+                } else {
+                    statusText.style.color = 'var(--warning-color)';
+                }
+            } catch (error) {
+                document.getElementById('statusText').textContent = 'Error checking status';
+                document.getElementById('statusText').style.color = 'var(--danger-color)';
+            }
+        }
+
+        async function checkHealth() {
+            if (!isConnected) {
+                showNotification('Please test connection first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${baseUrl}/healthz`);
+                if (response.ok) {
+                    showNotification('Health check passed', 'success');
+                } else {
+                    showNotification('Health check failed', 'error');
+                }
+            } catch (error) {
+                showNotification('Health check failed: ' + error.message, 'error');
+            }
+        }
+
+        // Model Management
+        async function pullModel() {
+            const modelName = document.getElementById('modelName').value.trim();
+            if (!modelName) {
+                showNotification('Please enter a model name', 'error');
+                return;
+            }
+            
+            if (!isConnected) {
+                showNotification('Please test connection first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${baseUrl}/pull_model/${encodeURIComponent(modelName)}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.status === 'pull_started') {
+                    showNotification(`Model pull started for ${modelName}`, 'success');
+                    document.getElementById('modelName').value = '';
+                }
+            } catch (error) {
+                showNotification('Failed to pull model: ' + error.message, 'error');
+            }
+        }
+
+        async function refreshModels() {
+            if (!isConnected) return;
+            
+            try {
+                const response = await fetch(`${baseUrl}/list_models`);
+                const data = await response.json();
+                displayModels(data.models || []);
+                updateModelSelector(data.models || []);
+            } catch (error) {
+                document.getElementById('modelList').innerHTML = 
+                    '<div style="padding: 20px; text-align: center; color: var(--danger-color);">Failed to load models</div>';
+            }
+        }
+
+        function displayModels(models) {
+            const modelList = document.getElementById('modelList');
+            
+            if (models.length === 0) {
+                modelList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No models found</div>';
+                return;
+            }
+            
+            modelList.innerHTML = models.map(model => `
+                <div class="model-item">
+                    <div class="model-info">
+                        <div class="model-name">${model.label}</div>
+                        <div class="model-size">Value: ${model.value}</div>
+                    </div>
+                    ${model.value.startsWith('ollama/') ? 
+                        `<button class="btn btn-danger btn-sm" onclick="deleteModel('${model.value.replace('ollama/', '')}')">
+                            <i class="fas fa-trash"></i>
+                        </button>` : 
+                        '<span style="color: var(--text-secondary); font-size: 12px;">Enterprise Model</span>'
+                    }
+                </div>
+            `).join('');
+        }
+
+        function updateModelSelector(models) {
+            const selector = document.getElementById('selectedModel');
+            const currentValue = selector.value;
+            selector.innerHTML = '<option value="">Select a model...</option>' +
+                models.map(model => `<option value="${model.value}">${model.label}</option>`).join('');
+            
+            // Restore previous selection if it still exists
+            if (currentValue && models.some(m => m.value === currentValue)) {
+                selector.value = currentValue;
+            }
+        }
+
+        async function deleteModel(modelName) {
+            if (!confirm(`Are you sure you want to delete model "${modelName}"?`)) return;
+            
+            try {
+                const response = await fetch(`${baseUrl}/delete_model/${encodeURIComponent(modelName)}`, {
+                    method: 'DELETE'
+                });
+                if (response.ok) {
+                    showNotification(`Model ${modelName} deleted successfully`, 'success');
+                    refreshModels();
+                }
+            } catch (error) {
+                showNotification('Failed to delete model: ' + error.message, 'error');
+            }
+        }
+
+        // Conversation Management
+        function startNewConversation() {
+            currentConversation = {
+                id: generateId(),
+                messages: [],
+                model: null,
+                title: 'New Chat',
+                createdAt: new Date().toISOString()
+            };
+            
+            initializeChat();
+            document.getElementById('selectedModel').value = '';
+        }
+
+        function saveConversationToStorage() {
+            const conversations = getConversationsFromStorage();
+            const existingIndex = conversations.findIndex(c => c.id === currentConversation.id);
+            
+            // Update title based on first message if still "New Chat"
+            if (currentConversation.title === 'New Chat' && currentConversation.messages.length > 0) {
+                const firstUserMessage = currentConversation.messages.find(m => m.role === 'user');
+                if (firstUserMessage) {
+                    currentConversation.title = firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '');
+                }
+            }
+            
+            if (existingIndex >= 0) {
+                conversations[existingIndex] = currentConversation;
+            } else {
+                conversations.push(currentConversation);
+            }
+            
+            // Keep only last 50 conversations
+            if (conversations.length > 50) {
+                conversations.splice(0, conversations.length - 50);
+            }
+            
+            localStorage.setItem('llm_conversations', JSON.stringify(conversations));
+        }
+
+        function getConversationsFromStorage() {
+            const stored = localStorage.getItem('llm_conversations');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function loadConversation(conversationId) {
+            const conversations = getConversationsFromStorage();
+            const conversation = conversations.find(c => c.id === conversationId);
+            
+            if (conversation) {
+                currentConversation = conversation;
+                
+                // Restore chat UI
+                const chatMessages = document.getElementById('chatMessages');
+                chatMessages.innerHTML = '';
+                
+                if (conversation.messages.length === 0) {
+                    chatMessages.innerHTML = '<div class="message assistant">Hello! I\'m ready to help. Select a model and start chatting!</div>';
+                } else {
+                    conversation.messages.forEach(msg => {
+                        addMessageToChat(msg.role, msg.content);
+                    });
+                }
+                
+                // Set model selector
+                if (conversation.model) {
+                    document.getElementById('selectedModel').value = conversation.model;
+                }
+                
+                // Hide conversation list
+                document.getElementById('conversationList').style.display = 'none';
+            }
+        }
+
+        function toggleConversationList() {
+            const list = document.getElementById('conversationList');
+            if (list.style.display === 'none' || !list.style.display) {
+                showConversationList();
+            } else {
+                list.style.display = 'none';
+            }
+        }
+
+        function showConversationList() {
+            const conversations = getConversationsFromStorage();
+            const list = document.getElementById('conversationList');
+            
+            if (conversations.length === 0) {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No conversations found</div>';
+            } else {
+                list.innerHTML = conversations
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .map(conv => `
+                        <div class="conversation-item" onclick="loadConversation('${conv.id}')">
+                            <div class="conversation-title">${conv.title}</div>
+                            <div class="conversation-date">${new Date(conv.createdAt).toLocaleString()}</div>
+                        </div>
+                    `).join('');
+            }
+            
+            list.style.display = 'block';
+        }
+
+        function exportConversation() {
+            if (currentConversation.messages.length === 0) {
+                showNotification('No messages to export', 'error');
+                return;
+            }
+            
+            const content = currentConversation.messages
+                .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+                .join('\n\n');
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `conversation_${currentConversation.title.replace(/[^a-z0-9]/gi, '_')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Conversation exported', 'success');
+        }
+
+        function clearAllConversations() {
+            if (confirm('Are you sure you want to delete all conversations? This cannot be undone.')) {
+                localStorage.removeItem('llm_conversations');
+                startNewConversation();
+                document.getElementById('conversationList').style.display = 'none';
+                showNotification('All conversations cleared', 'success');
+            }
+        }
+
+        // Chat Interface
+        function initializeChat() {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="message assistant">
+                    Hello! I'm ready to help. Select a model and start chatting!
+                </div>
+            `;
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const selectedModel = document.getElementById('selectedModel').value;
+            const message = input.value.trim();
+            
+            if (!message) return;
+            if (!selectedModel) {
+                showNotification('Please select a model first', 'error');
+                return;
+            }
+            
+            // Set conversation model if not set
+            if (!currentConversation.model) {
+                currentConversation.model = selectedModel;
+            }
+            
+            // Add user message to conversation
+            const userMessage = { role: 'user', content: message };
+            currentConversation.messages.push(userMessage);
+            
+            // Add to UI
+            addMessageToChat('user', message);
+            input.value = '';
+            
+            // Save to localStorage
+            saveConversationToStorage();
+            
+            // Send to API with full conversation history
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<div class="loading"></div> Sending...';
+            
+            try {
+                const assistantResponse = await sendSSEMessage(selectedModel, [...currentConversation.messages]);
+                
+                // Add assistant response to conversation if we got a response
+                if (assistantResponse && assistantResponse.trim()) {
+                    currentConversation.messages.push({ role: 'assistant', content: assistantResponse });
+                    saveConversationToStorage();
+                }
+            } catch (error) {
+                addMessageToChat('assistant', 'Error: ' + error.message);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+            }
+        }
+
+        async function sendSSEMessage(model, messages) {
+            // Abort any existing request
+            if (currentController) {
+                currentController.abort();
+            }
+            
+            currentController = new AbortController();
+            let assistantMessage = '';
+            
+            try {
+                const response = await fetch(`${baseUrl}/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: messages
+                    }),
+                    signal: currentController.signal
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let messageDiv = null;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            
+                            if (data === '[DONE]') {
+                                return assistantMessage;
+                            }
+                            
+                            if (data.trim() && !data.startsWith('Error:')) {
+                                // Create assistant message div if it doesn't exist
+                                if (!messageDiv) {
+                                    messageDiv = addMessageToChat('assistant', '');
+                                }
+                                
+                                // Unescape content and append
+                                const unescapedData = data.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+                                assistantMessage += unescapedData;
+                                
+                                // Update message content
+                                messageDiv.innerHTML = assistantMessage.replace(/\n/g, '<br>');
+                                
+                                // Scroll to bottom
+                                const chatMessages = document.getElementById('chatMessages');
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            } else if (data.startsWith('Error:')) {
+                                // Handle error messages
+                                addMessageToChat('assistant', data);
+                                return '';
+                            }
+                        }
+                    }
+                }
+                
+                return assistantMessage;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.log('Request was aborted');
+                    return '';
+                } else {
+                    throw error;
+                }
+            } finally {
+                currentController = null;
+            }
+        }
+
+        function addMessageToChat(role, content) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            // Remove labels as requested - just show the content
+            messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return messageDiv;
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeChat();
+            setTimeout(testConnection, 1000);
+        });
+
+        // Update base URL when inputs change
+        document.getElementById('host').addEventListener('input', updateBaseUrl);
+        document.getElementById('port').addEventListener('input', updateBaseUrl);
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (currentController) {
+                currentController.abort();
+            }
+        });
+    </script>
+</body>
+</html>

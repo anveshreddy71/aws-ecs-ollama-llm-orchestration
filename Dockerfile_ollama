@@ -1,0 +1,6 @@
+FROM ollama/ollama
+
+# Update packages to address vulnerabilities
+RUN apt-get update && apt-get upgrade -y && apt-get clean
+
+EXPOSE 11434
